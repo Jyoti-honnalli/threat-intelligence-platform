@@ -1,29 +1,55 @@
 import os
+import time
+import logging
 from groq import Groq
 from dotenv import load_dotenv
 
+# Load environment variables
 load_dotenv()
 
-def call_groq(prompt: str) -> str:
-    api_key = os.getenv("GROQ_API_KEY")
+# Setup logging
+logging.basicConfig(level=logging.INFO)
 
-    if not api_key:
-        raise Exception("GROQ_API_KEY not found in .env file")
+# Initialize client
+client = Groq(
+    api_key=os.getenv("GROQ_API_KEY")
+)
 
-    try:
-        client = Groq(api_key=api_key)
+def clean_text(text):
+    text = text.replace("**", "")
+    text = text.replace("\\n", "\n")
 
-        response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",   # ✅ stable model
-            messages=[
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.3
-        )
+    lines = text.split("\n")
+    cleaned_lines = [line.strip() for line in lines if line.strip()]
 
-        content = response.choices[0].message.content
-        return content
+    return cleaned_lines
 
-    except Exception as e:
-        print("GROQ ERROR:", str(e))
-        raise e
+
+def generate_response(prompt, retries=3):
+    for attempt in range(retries):
+        try:
+            logging.info(f"[Groq API] Attempt {attempt+1} | Prompt: {prompt[:30]}...")
+
+            response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.7,
+                max_tokens=200
+            )
+
+            # Safe extraction
+            if response and response.choices:
+                cleaned = clean_text(response.choices[0].message.content)
+                return cleaned
+
+            return "Error: Empty response from API"
+
+        except Exception as e:
+            logging.error(f"[Groq API] Attempt {attempt+1} failed | Error: {str(e)}")
+
+            # exponential backoff
+            time.sleep(2 ** attempt)
+
+    logging.critical("[Groq API] All retry attempts failed")
+    return "Error: Failed after multiple retries"
+    

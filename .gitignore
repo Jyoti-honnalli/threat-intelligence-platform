@@ -1,15 +1,20 @@
+```
+# Python
+venv/
+__pycache__/
 *.pyc
+
+# Environment variables
+.env
+.env.*
 
 # Java
 target/
 *.class
 
-# Python
-venv/
-__pycache__/
-
-# Env
-.env
-
 # IDE
 .vscode/
+
+# Logs
+*.log
+```

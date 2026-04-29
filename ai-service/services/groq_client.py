@@ -19,19 +19,16 @@ def clean_text(text):
     text = text.replace("**", "")
     text = text.replace("\\n", "\n")
 
-    # Split into lines
     lines = text.split("\n")
-
-    # Remove empty lines
     cleaned_lines = [line.strip() for line in lines if line.strip()]
 
     return cleaned_lines
+
 
 def generate_response(prompt, retries=3):
     for attempt in range(retries):
         try:
             logging.info(f"[Groq API] Attempt {attempt+1} | Prompt: {prompt[:30]}...")
-            logging.info(f"[Groq API] Success on attempt {attempt+1}")
 
             response = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
@@ -43,7 +40,7 @@ def generate_response(prompt, retries=3):
             # Safe extraction
             if response and response.choices:
                 cleaned = clean_text(response.choices[0].message.content)
-            return cleaned
+                return cleaned
 
             return "Error: Empty response from API"
 
@@ -55,3 +52,4 @@ def generate_response(prompt, retries=3):
 
     logging.critical("[Groq API] All retry attempts failed")
     return "Error: Failed after multiple retries"
+    

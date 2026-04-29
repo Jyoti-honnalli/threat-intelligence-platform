@@ -1,32 +1,29 @@
-import requests
 import os
+from groq import Groq
+from dotenv import load_dotenv
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+load_dotenv()
 
-def call_groq(prompt):
+def call_groq(prompt: str) -> str:
+    api_key = os.getenv("GROQ_API_KEY")
+
+    if not api_key:
+        raise Exception("GROQ_API_KEY not found in .env file")
+
     try:
-        url = "https://api.groq.com/openai/v1/chat/completions"
+        client = Groq(api_key=api_key)
 
-        headers = {
-            "Authorization": f"Bearer {GROQ_API_KEY}",
-            "Content-Type": "application/json"
-        }
-
-        data = {
-            "model": "llama-3.3-70b-versatile",
-            "messages": [
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",   # ✅ stable model
+            messages=[
                 {"role": "user", "content": prompt}
             ],
-            "temperature": 0.3
-        }
+            temperature=0.3
+        )
 
-        response = requests.post(url, headers=headers, json=data, timeout=30)
-
-        if response.status_code != 200:
-            return f"Error: {response.text}"
-
-        result = response.json()
-        return result["choices"][0]["message"]["content"]
+        content = response.choices[0].message.content
+        return content
 
     except Exception as e:
-        return f"Error: {str(e)}"
+        print("GROQ ERROR:", str(e))
+        raise e

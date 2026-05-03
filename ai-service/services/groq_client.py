@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+MODEL_NAME = "llama-3.1-8b-instant"
+
 def call_groq(prompt: str) -> str:
     api_key = os.getenv("GROQ_API_KEY")
 
@@ -14,7 +16,7 @@ def call_groq(prompt: str) -> str:
         client = Groq(api_key=api_key)
 
         response = client.chat.completions.create(
-            model="llama-3.1-8b-instant",   # ✅ stable model
+            model=MODEL_NAME,
             messages=[
                 {"role": "user", "content": prompt}
             ],

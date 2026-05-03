@@ -1,7 +1,10 @@
 from flask import Blueprint, request, jsonify
 from services.groq_client import call_groq
+from services.cache import get_cache, set_cache
+from services.metrics import record_ai_response_time
 import json
 from datetime import datetime
+import time
 
 recommend_bp = Blueprint("recommend", __name__)
 
@@ -35,7 +38,16 @@ def recommend():
 
     try:
         prompt = load_prompt(user_input)
+        cached_result = get_cache(prompt)
+
+        if cached_result:
+            cached_result["cached"] = True
+            cached_result["generated_at"] = datetime.utcnow().isoformat()
+            return jsonify(cached_result), 200
+
+        start_time = time.time()
         ai_response = call_groq(prompt)
+        record_ai_response_time(time.time() - start_time)
 
         if ai_response:
             ai_response = ai_response.strip()
@@ -46,11 +58,14 @@ def recommend():
         if not isinstance(recommendations, list):
             raise ValueError("Invalid AI response format")
 
-        return jsonify({
+        result = {
             "recommendations": recommendations[:3],
             "generated_at": datetime.utcnow().isoformat(),
             "is_fallback": False
-        }), 200
+        }
+
+        set_cache(prompt, {"recommendations": recommendations[:3], "is_fallback": False})
+        return jsonify(result), 200
 
     except Exception as e:
         print("AI ERROR:", str(e))

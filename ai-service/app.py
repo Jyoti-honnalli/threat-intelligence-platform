@@ -1,4 +1,6 @@
 from flask import Flask, jsonify
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,6 +12,12 @@ from services.groq_client import MODEL_NAME
 from services.metrics import get_average_response_time_ms, get_uptime_seconds
 
 app = Flask(__name__)
+
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"]
+)
 
 @app.route("/")
 def home():

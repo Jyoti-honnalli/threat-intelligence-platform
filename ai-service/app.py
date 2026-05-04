@@ -1,19 +1,28 @@
 from flask import Flask, request, jsonify
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from routes.describe import describe_bp
 from routes.recommend import recommend_bp
 from routes.report import report_bp
 
-from services.groq_client import call_groq
+from services.groq_client import MODEL_NAME, call_groq
+from services.metrics import get_average_response_time_ms, get_uptime_seconds
+
 from middleware.input_sanitizer import sanitize_input
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 
 VALID_TOKEN = "secure-token-123"
 
 app = Flask(__name__)
 
-# Rate limiter setup
-limiter = Limiter(get_remote_address, app=app, default_limits=[])
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"]
+)
 
 @app.route("/")
 def home():
@@ -21,9 +30,13 @@ def home():
 
 @app.route("/health")
 def health():
-    return {"status": "ok"}
+    return jsonify({
+        "status": "ok",
+        "model": MODEL_NAME,
+        "avg_response_time_ms": get_average_response_time_ms(),
+        "uptime_seconds": get_uptime_seconds()
+    })
 
-# Register all routes
 app.register_blueprint(describe_bp)
 app.register_blueprint(recommend_bp)
 app.register_blueprint(report_bp)
@@ -84,6 +97,7 @@ def secure_headers(response):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
 
     response.headers.pop("Server", None)
 

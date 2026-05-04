@@ -1,16 +1,12 @@
-You are a cybersecurity assistant.
+Given the threat:
 
-Analyze the following threat and return ONLY valid JSON.
+{input}
 
-Do NOT include markdown.
-Do NOT include explanation.
-Do NOT include any text outside JSON.
-
-Return a JSON array of exactly 3 objects.
-
-Each object must contain:
-- action_type (monitor|block|alert|patch|investigate)
-- description (string)
-- priority (low|medium|high)
-
-Threat: {input}
+Provide 3 security recommendations in JSON:
+[
+  {
+    "action_type": "",
+    "description": "",
+    "priority": ""
+  }
+]

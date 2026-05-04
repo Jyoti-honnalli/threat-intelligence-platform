@@ -9,17 +9,18 @@ import time
 describe_bp = Blueprint("describe", __name__)
 
 def load_prompt(input_text):
-    with open("prompts/describe.txt", "r", encoding="utf-8") as f:
-        return f.read().replace("{input}", input_text)
+    with open("prompts/describe.txt", "r") as f:
+        template = f.read()
+    return template.replace("{input}", input_text)
 
 @describe_bp.route("/describe", methods=["POST"])
 def describe():
-    body = request.get_json(silent=True)
+    data = request.json.get("input")
 
-    if not body or "input" not in body:
-        return jsonify({"error": "Missing required field: input"}), 400
+    if not data:
+        return jsonify({"error": "Invalid input"}), 400
 
-    user_input = str(body["input"]).strip()
+    prompt = load_prompt(data)
 
     if len(user_input) < 3:
         return jsonify({"error": "Input is too short"}), 400

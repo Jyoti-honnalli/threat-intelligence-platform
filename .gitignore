@@ -1,2 +1,8 @@
 # Local / machine-specific editor settings (do not commit)
 .vscode/settings.json
+
+# Frontend (Vite)
+Frontend/node_modules
+Frontend/dist
+Frontend/.env
+Frontend/.env.*.local
